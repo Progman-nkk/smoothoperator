@@ -1,0 +1,10 @@
+C:\Users\42\Google Drive\Gamma Projects\KARL KUKA\Kuka - Research\KinectStream\KinectStream\bin\Release\KinectStream.exe.config
+C:\Users\42\Google Drive\Gamma Projects\KARL KUKA\Kuka - Research\KinectStream\KinectStream\bin\Release\KinectStream.exe
+C:\Users\42\Google Drive\Gamma Projects\KARL KUKA\Kuka - Research\KinectStream\KinectStream\bin\Release\KinectStream.pdb
+C:\Users\42\Google Drive\Gamma Projects\KARL KUKA\Kuka - Research\KinectStream\KinectStream\bin\Release\Microsoft.Kinect.dll
+C:\Users\42\Google Drive\Gamma Projects\KARL KUKA\Kuka - Research\KinectStream\KinectStream\bin\Release\Microsoft.Kinect.xml
+C:\Users\42\Google Drive\Gamma Projects\KARL KUKA\Kuka - Research\KinectStream\KinectStream\obj\Release\KinectStream.KinectInterface.resources
+C:\Users\42\Google Drive\Gamma Projects\KARL KUKA\Kuka - Research\KinectStream\KinectStream\obj\Release\KinectStream.Properties.Resources.resources
+C:\Users\42\Google Drive\Gamma Projects\KARL KUKA\Kuka - Research\KinectStream\KinectStream\obj\Release\KinectStream.csproj.GenerateResource.Cache
+C:\Users\42\Google Drive\Gamma Projects\KARL KUKA\Kuka - Research\KinectStream\KinectStream\obj\Release\KinectStream.exe
+C:\Users\42\Google Drive\Gamma Projects\KARL KUKA\Kuka - Research\KinectStream\KinectStream\obj\Release\KinectStream.pdb

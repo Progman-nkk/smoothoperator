@@ -1,0 +1,35 @@
+c:\users\42\documents\visual studio 2015\Projects\KinectStream\KinectStream\bin\Debug\KinectStream.exe.config
+c:\users\42\documents\visual studio 2015\Projects\KinectStream\KinectStream\bin\Debug\KinectStream.exe
+c:\users\42\documents\visual studio 2015\Projects\KinectStream\KinectStream\bin\Debug\KinectStream.pdb
+c:\users\42\documents\visual studio 2015\Projects\KinectStream\KinectStream\bin\Debug\Microsoft.Kinect.dll
+c:\users\42\documents\visual studio 2015\Projects\KinectStream\KinectStream\bin\Debug\Microsoft.Kinect.xml
+c:\users\42\documents\visual studio 2015\Projects\KinectStream\KinectStream\obj\Debug\KinectStream.csprojResolveAssemblyReference.cache
+c:\users\42\documents\visual studio 2015\Projects\KinectStream\KinectStream\obj\Debug\KinectStream.Form1.resources
+c:\users\42\documents\visual studio 2015\Projects\KinectStream\KinectStream\obj\Debug\KinectStream.Properties.Resources.resources
+c:\users\42\documents\visual studio 2015\Projects\KinectStream\KinectStream\obj\Debug\KinectStream.csproj.GenerateResource.Cache
+c:\users\42\documents\visual studio 2015\Projects\KinectStream\KinectStream\obj\Debug\KinectStream.exe
+c:\users\42\documents\visual studio 2015\Projects\KinectStream\KinectStream\obj\Debug\KinectStream.pdb
+C:\Users\NKK\Google Drive\KARL KUKA\Kuka - Research\KinectStream\KinectStream\bin\Debug\KinectStream.exe.config
+C:\Users\NKK\Google Drive\KARL KUKA\Kuka - Research\KinectStream\KinectStream\obj\Debug\KinectStream.exe
+C:\Users\NKK\Google Drive\KARL KUKA\Kuka - Research\KinectStream\KinectStream\obj\Debug\KinectStream.pdb
+C:\Users\42\Google Drive\Gamma Projects\KARL KUKA\Kuka - Research\KinectStream\KinectStream\bin\Debug\KinectStream.exe.config
+C:\Users\42\Google Drive\Gamma Projects\KARL KUKA\Kuka - Research\KinectStream\KinectStream\bin\Debug\KinectStream.exe
+C:\Users\42\Google Drive\Gamma Projects\KARL KUKA\Kuka - Research\KinectStream\KinectStream\bin\Debug\KinectStream.pdb
+C:\Users\42\Google Drive\Gamma Projects\KARL KUKA\Kuka - Research\KinectStream\KinectStream\bin\Debug\Microsoft.Kinect.dll
+C:\Users\42\Google Drive\Gamma Projects\KARL KUKA\Kuka - Research\KinectStream\KinectStream\bin\Debug\Microsoft.Kinect.xml
+C:\Users\42\Google Drive\Gamma Projects\KARL KUKA\Kuka - Research\KinectStream\KinectStream\obj\Debug\KinectStream.KinectInterface.resources
+C:\Users\42\Google Drive\Gamma Projects\KARL KUKA\Kuka - Research\KinectStream\KinectStream\obj\Debug\KinectStream.Properties.Resources.resources
+C:\Users\42\Google Drive\Gamma Projects\KARL KUKA\Kuka - Research\KinectStream\KinectStream\obj\Debug\KinectStream.csproj.GenerateResource.Cache
+C:\Users\42\Google Drive\Gamma Projects\KARL KUKA\Kuka - Research\KinectStream\KinectStream\obj\Debug\KinectStream.exe
+C:\Users\42\Google Drive\Gamma Projects\KARL KUKA\Kuka - Research\KinectStream\KinectStream\obj\Debug\KinectStream.pdb
+C:\Users\NKK\Google Drive\KARL KUKA\Kuka - Research\KinectStream\KinectStream\bin\Debug\KinectStream.exe
+C:\Users\NKK\Google Drive\KARL KUKA\Kuka - Research\KinectStream\KinectStream\bin\Debug\KinectStream.pdb
+C:\Users\NKK\Google Drive\KARL KUKA\Kuka - Research\KinectStream\KinectStream\bin\Debug\Microsoft.Kinect.xml
+C:\Users\NKK\Google Drive\KARL KUKA\Kuka - Research\KinectStream\KinectStream\obj\Debug\KinectStream.csprojResolveAssemblyReference.cache
+C:\Users\NKK\Google Drive\KARL KUKA\Kuka - Research\KinectStream\KinectStream\obj\Debug\KinectStream.Properties.Resources.resources
+C:\Users\NKK\Google Drive\KARL KUKA\Kuka - Research\KinectStream\KinectStream\obj\Debug\KinectStream.csproj.GenerateResource.Cache
+C:\Users\NKK\Google Drive\KARL KUKA\Kuka - Research\KinectStream\KinectStream\bin\Debug\Microsoft.Kinect.dll
+C:\Users\NKK\Google Drive\KARL KUKA\Kuka - Research\KinectStream\KinectStream\obj\Debug\SmoothStream.SmoothOperator.resources
+C:\code\KinectStream\KinectStream\bin\Debug\KinectStream.exe.config
+C:\code\KinectStream\KinectStream\obj\Debug\KinectStream.exe
+C:\code\KinectStream\KinectStream\obj\Debug\KinectStream.pdb
