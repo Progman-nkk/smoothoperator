@@ -1,4 +1,6 @@
-﻿namespace SmoothStream
+﻿using System.Windows.Forms;
+
+namespace SmoothStream
 {
     partial class SmoothOperator
     {
@@ -760,7 +762,7 @@
             this.txtReaderTimer.Size = new System.Drawing.Size(75, 26);
             this.txtReaderTimer.TabIndex = 78;
             // 
-            // KinectInterface
+            // SmoothOperator
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -829,10 +831,10 @@
             this.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.MaximizeBox = false;
             this.MinimizeBox = false;
-            this.Name = "KinectInterface";
+            this.Name = "SmoothOperator";
             this.ShowIcon = false;
             this.Text = "SmoothOperator";
-            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.KinectInterface_FormClosing);
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.SmoothStream_FormClosing);
             ((System.ComponentModel.ISupportInitialize)(this.imageStream)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
@@ -898,6 +900,19 @@
         private System.Windows.Forms.TextBox txtCounter;
         private System.Windows.Forms.Label label9;
         private System.Windows.Forms.TextBox txtReaderTimer;
+
+        public PictureBox ImageStream
+        {
+            get
+            {
+                return imageStream;
+            }
+
+            set
+            {
+                imageStream = value;
+            }
+        }
     }
 }
 

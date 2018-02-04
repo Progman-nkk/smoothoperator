@@ -33,3 +33,14 @@ C:\Users\NKK\Google Drive\KARL KUKA\Kuka - Research\KinectStream\KinectStream\ob
 C:\code\KinectStream\KinectStream\bin\Debug\KinectStream.exe.config
 C:\code\KinectStream\KinectStream\obj\Debug\KinectStream.exe
 C:\code\KinectStream\KinectStream\obj\Debug\KinectStream.pdb
+C:\code\SmoothOperator\KinectStream\obj\Debug\KinectStream.csprojResolveAssemblyReference.cache
+C:\code\SmoothOperator\KinectStream\obj\Debug\KinectStream.csproj.GenerateResource.Cache
+C:\code\SmoothOperator\KinectStream\bin\Debug\Microsoft.Kinect.dll
+C:\code\SmoothOperator\KinectStream\bin\Debug\Microsoft.Kinect.xml
+C:\code\SmoothOperator\KinectStream\obj\Debug\SmoothStream.SmoothOperator.resources
+C:\code\SmoothOperator\KinectStream\bin\Debug\SmoothStream.exe.config
+C:\code\SmoothOperator\KinectStream\bin\Debug\SmoothStream.exe
+C:\code\SmoothOperator\KinectStream\bin\Debug\SmoothStream.pdb
+C:\code\SmoothOperator\KinectStream\obj\Debug\SmoothStream.Properties.Resources.resources
+C:\code\SmoothOperator\KinectStream\obj\Debug\SmoothStream.exe
+C:\code\SmoothOperator\KinectStream\obj\Debug\SmoothStream.pdb

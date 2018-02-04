@@ -9,9 +9,9 @@ using System.Text.RegularExpressions;
 
 namespace SmoothStream
 {
-
     class OpenArms
     {
+        // Refactor!
         private Socket _clientSocket;
         public Socket ClientSocket
         {
@@ -334,7 +334,7 @@ namespace SmoothStream
             //    currentValue = formatE6Pos(xValue, yValue, zValue, aValue, bValue, cValue);
 
             //}
-            public void updateE6Pos(double[] deltaArray, SmoothOperator.SharedMemorySpace globalCoordinates)
+            public void updateE6Pos(double[] deltaArray, SharedMemorySpace globalCoordinates)
             {
                 xValue += deltaArray[0];
                 yValue += deltaArray[1];
@@ -353,7 +353,7 @@ namespace SmoothStream
                 string valueString = "{E6POS: X " + x + ", Y " + y + ", Z " + z + ", A " + a + ", B " + b + ", C " + c + ", E1 0.0, E2 0.0, E3 0.0, E4 0.0, E5 0.0, E6 0.0}";
                 return valueString;
             }
-            public void updateCurrentE6Pos(ref SmoothOperator.SharedMemorySpace globalCoordinates)
+            public void updateCurrentE6Pos(ref SharedMemorySpace globalCoordinates)
             {
 
                 globalCoordinates.CurrentX = xValue;
@@ -419,7 +419,7 @@ namespace SmoothStream
                 a5Value = 0;
                 a6Value = 0;
             }
-            public void updateCurrentE6Axis(ref SmoothOperator.SharedMemorySpace globalCoordinates)
+            public void updateCurrentE6Axis(ref SharedMemorySpace globalCoordinates)
             {
 
                 globalCoordinates.CurrentA1 = a1Value;
