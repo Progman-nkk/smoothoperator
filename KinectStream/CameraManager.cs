@@ -90,7 +90,7 @@ namespace SmoothStream
                 {
                     _globalCoordinates.DepthPixelArray = ToImageBitmap(frame);
                     
-                    _globalCoordinates._imageStreamReference.Image = _globalCoordinates.DepthPixelArray;
+                   // _globalCoordinates._imageStreamReference.Image = _globalCoordinates.DepthPixelArray;
                 }
             }
         }
@@ -157,7 +157,7 @@ namespace SmoothStream
 
                         }
 
-                        Joint midSpine = joints[JointType.Head];
+                        Joint midSpine = joints[JointType.SpineMid];
 
                         _globalCoordinates.midSpinePixel = KinectSensor.CoordinateMapper.MapCameraPointToDepthSpace(midSpine.Position);
                         _globalCoordinates.HandX = midSpine.Position.X;

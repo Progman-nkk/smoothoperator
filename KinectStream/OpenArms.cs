@@ -6,138 +6,147 @@ using System.Net.Sockets;
 using System.Diagnostics;
 using System.Windows.Forms;
 using System.Text.RegularExpressions;
+using System.ComponentModel;
 
 namespace SmoothStream
 {
     class OpenArms
     {
-        // Refactor!
-        private Socket _clientSocket;
-        public Socket ClientSocket
+        Stopwatch writerAssistTimer, readerAssistTimer;
+        BackgroundWorker writerAssistant, readerAssistant;
+        SharedMemorySpace _globalCoordinates;
+        string _serverIp = "notset";
+        int _serverSocket = 0;
+
+        public OpenArms(string serverIP, int serverSocket, ref SharedMemorySpace globalCoordinates)
         {
-            get{return _clientSocket;}
-            set{_clientSocket = value;}
-        }
-        private bool isActive = false;
-        public bool IsActive
-        {
-            get{return isActive;}
-            set{isActive = value;}
+            tunnelSystem = new ClientTunnel[10];
+            //initializeClients(serverIP, serverSocket);
+            _globalCoordinates = globalCoordinates;
+            _serverIp = serverIP;
+            _serverSocket = serverSocket;
         }
 
-        public OpenArms(string serverIP, int serverSocket)
+        public void initializeBackgroundComs()
         {
-            startClient(serverIP, serverSocket);
-        }
-        public bool isConnected()
-        {
-            if (ClientSocket.Connected)
+            if (writerAssistant == null)
             {
-                return true;
-            }else
-            {
-                return false;
+                writerAssistTimer = new Stopwatch();
+                writerAssistant = new BackgroundWorker();
+                writerAssistant.DoWork += writerAssistant_DoWork;
+                writerAssistant.RunWorkerCompleted += writerAssistant_RunWorkerCompleted;
+                writerAssistant.RunWorkerAsync();
             }
-        }
-        public bool startClient(string serverIP, int serverSocket)
-        {
-            ClientSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            System.Net.IPAddress ip = System.Net.IPAddress.Parse(serverIP);
-            IPEndPoint clientEndPoint = new IPEndPoint(ip, serverSocket);
-            Stopwatch connectionTimeout = new Stopwatch();
-            connectionTimeout.Start();
-            try
+            if (readerAssistant == null)
             {
-                IAsyncResult result = ClientSocket.BeginConnect(clientEndPoint, null, null);
-                bool success = result.AsyncWaitHandle.WaitOne(5000, true);
-                if (ClientSocket.Connected) { ClientSocket.EndConnect(result); }
+                readerAssistTimer = new Stopwatch();
+                readerAssistant = new BackgroundWorker();
+                readerAssistant.DoWork += readerAssistant_DoWork;
+                readerAssistant.RunWorkerCompleted += readerAssistant_RunWorkerCompleted;
+                readerAssistant.RunWorkerAsync();
+            }
+
+        }
+        private void writerAssistant_DoWork(object sender, System.ComponentModel.DoWorkEventArgs e)
+        {
+            writerAssistTimer.Restart();
+            BackgroundWorker worker = (BackgroundWorker)sender;
+
+            OpenArms.E6Pos tempE6 = new OpenArms.E6Pos();
+            tempE6.updateE6Pos(calculateDelta(), _globalCoordinates);
+            ClientTunnel tempClient = getNextClient();
+            tempClient.writeVariable("MYPOS", tempE6.currentValue);
+            tempClient.IsActive = false;
+            _globalCoordinates.SentMessage = tempE6.currentValue;
+        }
+        private void writerAssistant_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            while (writerAssistTimer.Elapsed.TotalMilliseconds < 3.5) ;
+            BackgroundWorker worker = (BackgroundWorker)sender;
+            _globalCoordinates.WriterBackgroundTimer = writerAssistTimer.Elapsed.TotalMilliseconds;
+            worker.RunWorkerAsync();
+        }
+        private void readerAssistant_DoWork(object sender, System.ComponentModel.DoWorkEventArgs e)
+        {
+            readerAssistTimer.Restart();
+            BackgroundWorker worker = (BackgroundWorker)sender;
+            readCurrentAxisThread();
+            readCurrentPosThread();
+        }
+        private void readerAssistant_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            while (readerAssistTimer.Elapsed.TotalMilliseconds < 7) ;
+            BackgroundWorker worker = (BackgroundWorker)sender;
+            worker.RunWorkerAsync();
+        }
+        private void readCurrentAxisThread()
+        {
+            ClientTunnel tempClient = getNextClient();
+            E6Axis currentAxis = new E6Axis(tempClient.readVariable("$AXIS_ACT_MEAS"));
+            tempClient.IsActive = false;
+            currentAxis.updateCurrentE6Axis(ref _globalCoordinates);
+        }
+        private void readCurrentPosThread()
+        {
+            ClientTunnel tempClient = getNextClient();
+            E6Pos currentPos = new E6Pos(tempClient.readVariable("$POS_ACT"));
+            tempClient.IsActive = false;
+            currentPos.updateCurrentE6Pos(ref _globalCoordinates);
+        }
+        private double[] calculateDelta()
+        {
+            double[] deltaValues = new double[6] { 0, 0, 0, 0, 0, 0 };
+            double posAcceleration = 6;
+            double rotAcceleration = .6;
+            double rotDecceleration = .4;
+            double posDecceleration = .8;
+            double maxValue = 2;
+            double minValue = -2;
+
+            if (_globalCoordinates.HandState != "Lasso")
+            {
+                if (_globalCoordinates.CurrentA3 >= 120)
+                {
+                    deltaValues[0] = 0.5;
+                }
                 else
                 {
-                    ClientSocket.Close();
-                    MessageBox.Show("Connection Timeout!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    throw new System.Exception("Could not instantiate client");
+                    deltaValues[0] = (_globalCoordinates.HandZ * 0);
+                }
+                deltaValues[1] = (_globalCoordinates.HandX * posAcceleration);
+                deltaValues[2] = (_globalCoordinates.HandY * posAcceleration);
+                deltaValues[3] = (_globalCoordinates.HandX * rotAcceleration);
+                deltaValues[4] = (_globalCoordinates.HandY * rotAcceleration);
+                deltaValues[5] = (_globalCoordinates.HandZ * rotAcceleration);
+            }
+            else
+            {
+                deltaValues[0] = deltaValues[0] * posDecceleration;
+                deltaValues[1] = deltaValues[1] * posDecceleration;
+                deltaValues[2] = deltaValues[2] * posDecceleration;
+                deltaValues[3] = deltaValues[3] * rotDecceleration;
+                deltaValues[4] = deltaValues[4] * rotDecceleration;
+                deltaValues[5] = deltaValues[5] * rotDecceleration;
+            }
+            for (int i = 0; i < deltaValues.Length; i++)
+            {
+                if (deltaValues[i] > maxValue)
+                {
+                    deltaValues[i] = maxValue;
+                }
+                if (deltaValues[i] < minValue)
+                {
+                    deltaValues[i] = minValue;
                 }
             }
-            catch (Exception e)
-            {
-                MessageBox.Show("Trouble Connecting: " + e.ToString(), "Warning", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return false;
-            }
+            _globalCoordinates.ArmX = deltaValues[0];
+            _globalCoordinates.ArmY = deltaValues[1];
+            _globalCoordinates.ArmZ = deltaValues[2];
+            _globalCoordinates.ArmA = deltaValues[3];
+            _globalCoordinates.ArmB = deltaValues[4];
+            _globalCoordinates.ArmC = deltaValues[5];
 
-            return true;
-        }
-
-        public string readVariable(string _variableRead)
-        {
-            string outputString;
-            byte[] messageReq = readMessageRequest(_variableRead, out outputString);
-            byte[] receivedData = new byte[256];
-            int sentBytes = 0;
-            int receivedBytes = 0;
-            try
-            {
-                sentBytes = ClientSocket.Send(messageReq);
-                //MessageBox.Show("Sent:" + sentBytes.ToString() + " bytes as " + outputString, "Warning", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                receivedBytes = ClientSocket.Receive(receivedData);
-            }
-            catch (SocketException e)
-            {
-                MessageBox.Show("SocketException: " + e.ToString(), "Warning", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-
-            ReceiveMessageFormat response = new ReceiveMessageFormat(receivedData);
-            //MessageBox.Show("Received:" + receivedBytes.ToString() + " bytes as" + response._varValue, "Warning", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-            return response._varValue;
-        }
-        public string writeVariable(string _variableWrite, string targetE6)
-        {
-            string outputString;
-            byte[] messageReq = writeMessageRequest(_variableWrite, targetE6, out outputString);
-            byte[] receivedData = new byte[256];
-            int sentBytes = 0;
-            int receivedBytes = 0;
-            try
-            {
-                sentBytes = ClientSocket.Send(messageReq);
-                //MessageBox.Show("Sent:" + sentBytes.ToString() + " bytes as " + outputString, "Warning", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                receivedBytes = ClientSocket.Receive(receivedData);
-            }
-            catch (SocketException e)
-            {
-                MessageBox.Show("SocketException: " + e.ToString(), "Warning", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-            ReceiveMessageFormat response = new ReceiveMessageFormat(receivedData);
-            //MessageBox.Show("Received:" + receivedBytes.ToString() + " bytes as" + response._varValue, "Warning", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            return response._varValue;
-        }
-
-        byte[] readMessageRequest(string varName, out string outputString)
-        {
-            Random rnd = new Random();
-            string messageId = (rnd.Next(0, 99)).ToString("X2");
-            string functionType = "0";
-            string varNameLength = varName.Length.ToString("X2");
-            string reqLength = (varName.Length + 3).ToString("X2");
-            outputString = messageId + reqLength + functionType + varNameLength + varName;
-            SendMessageFormat readRequest = new SendMessageFormat(messageId, reqLength, functionType, varNameLength, varName);
-
-            return readRequest.messageReady;
-        }
-        byte[] writeMessageRequest(string varName, string varValue, out string outputString)
-        {
-            Random rnd = new Random();
-            string messageId = (rnd.Next(0, 99)).ToString("X2");
-            string reqLength = (varName.Length + varValue.Length + 5).ToString("X2");
-            string functionType = "1";
-            string varNameLength = varName.Length.ToString("X2");
-            string varValueLength = varValue.Length.ToString("X2");
-
-
-            outputString = messageId + reqLength + functionType + varNameLength + varName + varValueLength + varValue;
-            SendMessageFormat readRequest = new SendMessageFormat(messageId, reqLength, functionType, varNameLength, varName, varValueLength, varValue);
-
-            return readRequest.messageReady;
+            return deltaValues;
         }
 
         public class ReceiveMessageFormat
@@ -162,7 +171,7 @@ namespace SmoothStream
                 _temp = _messageId;
             }
         }
-        public class SendMessageFormat
+        private class SendMessageFormat
         {
             private ushort _reqLength; // In hexadecimal units
             private ushort _messageId; // In hexadecimal units
@@ -268,8 +277,7 @@ namespace SmoothStream
             }
 
         }
-
-        public class E6Pos
+        private class E6Pos
         {
 
             public double xValue;
@@ -363,13 +371,11 @@ namespace SmoothStream
                 globalCoordinates.CurrentB = bValue;
                 globalCoordinates.CurrentC = cValue;
 
-
                 currentValue = formatE6Pos(xValue, yValue, zValue, aValue, bValue, cValue);
             }
         }
-        public class E6Axis
+        private class E6Axis
         {
-
             public double a1Value;
             public double a2Value;
             public double a3Value;
@@ -440,6 +446,181 @@ namespace SmoothStream
             }
 
         }
-        
+
+        private ClientTunnel getNextClient()
+        {
+            foreach (ClientTunnel client in tunnelSystem)
+            {
+                if (!client.IsActive)
+                {
+                    client.IsActive = true;
+                    return client;
+                }
+            }
+            MessageBox.Show("Clients Busy");
+            return tunnelSystem[11]; // <-- Fix this 
+
+        }
+        private ClientTunnel[] tunnelSystem;
+        public void initializeClients()
+        {
+            int clientsConnected = 0;
+            for (int i = 0; i < tunnelSystem.Length; i++)
+            {
+                if (tunnelSystem[i] == null)
+                {
+                    tunnelSystem[i] = new ClientTunnel(_serverIp, _serverSocket);
+                    if (tunnelSystem[i].isConnected())
+                    {
+                        clientsConnected++;
+                    }
+                }
+            }
+            if (clientsConnected == tunnelSystem.Length)
+            {
+                MessageBox.Show("all connected");
+                initializeBackgroundComs();
+            }
+            else
+            {
+                for (int i = 0; i < tunnelSystem.Length; i++)
+                {
+                    tunnelSystem[i] = null;
+                }
+            }
+        }
+
+        private class ClientTunnel
+        {
+            private Socket clientSocket;
+            public Socket ClientSocket
+            {
+                get { return clientSocket; }
+                set { clientSocket = value; }
+            }
+            private bool isActive = false;
+            public bool IsActive
+            {
+                get { return isActive; }
+                set { isActive = value; }
+            }
+
+            public ClientTunnel(string serverIP, int serverSocket)
+            {
+                startClient(serverIP, serverSocket);
+            }
+
+            public bool startClient(string serverIP, int serverSocket)
+            {
+                ClientSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                System.Net.IPAddress ip = System.Net.IPAddress.Parse(serverIP);
+                IPEndPoint clientEndPoint = new IPEndPoint(ip, serverSocket);
+                Stopwatch connectionTimeout = new Stopwatch();
+                connectionTimeout.Start();
+                try
+                {
+                    IAsyncResult result = ClientSocket.BeginConnect(clientEndPoint, null, null);
+                    bool success = result.AsyncWaitHandle.WaitOne(5000, true);
+                    if (ClientSocket.Connected) { ClientSocket.EndConnect(result); }
+                    else
+                    {
+                        ClientSocket.Close();
+                        MessageBox.Show("Connection Timeout!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        throw new System.Exception("Could not instantiate client");
+                    }
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show("Trouble Connecting: " + e.ToString(), "Warning", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return false;
+                }
+
+                return true;
+            }
+            public bool isConnected()
+            {
+                if (ClientSocket.Connected)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            public string readVariable(string _variableRead)
+            {
+                string outputString;
+                byte[] messageReq = readMessageRequest(_variableRead, out outputString);
+                byte[] receivedData = new byte[256];
+                int sentBytes = 0;
+                int receivedBytes = 0;
+                try
+                {
+                    sentBytes = ClientSocket.Send(messageReq);
+                    //MessageBox.Show("Sent:" + sentBytes.ToString() + " bytes as " + outputString, "Warning", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    receivedBytes = ClientSocket.Receive(receivedData);
+                }
+                catch (SocketException e)
+                {
+                    MessageBox.Show("SocketException: " + e.ToString(), "Warning", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+
+                ReceiveMessageFormat response = new ReceiveMessageFormat(receivedData);
+                //MessageBox.Show("Received:" + receivedBytes.ToString() + " bytes as" + response._varValue, "Warning", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                return response._varValue;
+            }
+            public string writeVariable(string _variableWrite, string targetE6)
+            {
+                string outputString;
+                byte[] messageReq = writeMessageRequest(_variableWrite, targetE6, out outputString);
+                byte[] receivedData = new byte[256];
+                int sentBytes = 0;
+                int receivedBytes = 0;
+                try
+                {
+                    sentBytes = ClientSocket.Send(messageReq);
+                    //MessageBox.Show("Sent:" + sentBytes.ToString() + " bytes as " + outputString, "Warning", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    receivedBytes = ClientSocket.Receive(receivedData);
+                }
+                catch (SocketException e)
+                {
+                    MessageBox.Show("SocketException: " + e.ToString(), "Warning", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                ReceiveMessageFormat response = new ReceiveMessageFormat(receivedData);
+                //MessageBox.Show("Received:" + receivedBytes.ToString() + " bytes as" + response._varValue, "Warning", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return response._varValue;
+            }
+
+            byte[] readMessageRequest(string varName, out string outputString)
+            {
+                Random rnd = new Random();
+                string messageId = (rnd.Next(0, 99)).ToString("X2");
+                string functionType = "0";
+                string varNameLength = varName.Length.ToString("X2");
+                string reqLength = (varName.Length + 3).ToString("X2");
+                outputString = messageId + reqLength + functionType + varNameLength + varName;
+                SendMessageFormat readRequest = new SendMessageFormat(messageId, reqLength, functionType, varNameLength, varName);
+
+                return readRequest.messageReady;
+            }
+            byte[] writeMessageRequest(string varName, string varValue, out string outputString)
+            {
+                Random rnd = new Random();
+                string messageId = (rnd.Next(0, 99)).ToString("X2");
+                string reqLength = (varName.Length + varValue.Length + 5).ToString("X2");
+                string functionType = "1";
+                string varNameLength = varName.Length.ToString("X2");
+                string varValueLength = varValue.Length.ToString("X2");
+
+
+                outputString = messageId + reqLength + functionType + varNameLength + varName + varValueLength + varValue;
+                SendMessageFormat readRequest = new SendMessageFormat(messageId, reqLength, functionType, varNameLength, varName, varValueLength, varValue);
+
+                return readRequest.messageReady;
+            }
+        }
     }
 }

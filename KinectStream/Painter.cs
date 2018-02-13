@@ -107,6 +107,6 @@ namespace SmoothStream
             _extremeties[3] = yValue.ToArray().Max();
 
         }
-        
+         
     }
 }
