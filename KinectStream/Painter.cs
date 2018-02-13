@@ -20,6 +20,7 @@ namespace SmoothStream
 
         public Painter(ref SharedMemorySpace globalCoordinates)
         {
+
             _globalCoordinates = globalCoordinates;
                 _globalCoordinates._imageStreamReference = _globalCoordinates.MainForm.ImageStream;
                 _globalCoordinates.MainForm.ImageStream.Paint += new PaintEventHandler(imageStream_Paint);
@@ -31,9 +32,10 @@ namespace SmoothStream
                 bboxWindow.BackColor = System.Drawing.Color.LimeGreen;
                 bboxWindow.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Fixed3D;
                 bboxWindow.TopMost = true;
+                bboxWindow.TopLevel = true;
                 Size _size = new Size(0, 0);
                 bboxWindow.MinimumSize = _size;
-                bboxWindow.Show();
+                bboxWindow.Show(_globalCoordinates.MainForm);
             }
 
         }
@@ -80,6 +82,8 @@ namespace SmoothStream
                 bboxWindow.Top = tempPoint.Y;
                 bboxWindow.Width = (int)(bboxWidth * (float)1.3);
                 bboxWindow.Height = (int)(bboxHeight * (float)1.2);
+                bboxWindow.TopMost = true;
+                bboxWindow.TopLevel = true;
             }
 
 
