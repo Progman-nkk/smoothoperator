@@ -13,96 +13,140 @@ using System.Threading;
 
 namespace SmoothStream
 {
-    class Painter
+    public class Painter
     {
         private Form bboxWindow;
         private SharedMemorySpace _globalCoordinates = null;
-
+        Graphics g;
+        int x = 10;
+        int y = 10;
+        int width = 10;
+        int height = 10;
+        ColorSpacePoint tempPenTip = new ColorSpacePoint();
+        Font drawFont = new Font("Consolas", 12);
+        Rectangle tempRectange;
+        SolidBrush drawBrush;
+        System.Drawing.Pen myPen;
+        Dictionary<JointType, Joint> _tempSkeleton;
+        private Thread maskThread;
         public Painter(ref SharedMemorySpace globalCoordinates)
         {
             _globalCoordinates = globalCoordinates;
-                _globalCoordinates._imageStreamReference = _globalCoordinates.MainForm.ImageStream;
-                _globalCoordinates.MainForm.ImageStream.Paint += new PaintEventHandler(imageStream_Paint);
-            
-            if (bboxWindow == null)
+            _tempSkeleton = new Dictionary<JointType, Joint>();
+            _globalCoordinates._imageStreamReference = _globalCoordinates.MainForm.ImageStream;
+            _globalCoordinates.MainForm.ImageStream.Paint += new PaintEventHandler(imageStream_Paint);
+            tempRectange = new Rectangle(x, y, width, height);
+            drawBrush = new SolidBrush(System.Drawing.Color.Purple);
+            myPen = new System.Drawing.Pen(System.Drawing.Color.Red);
+            //maskThread = new Thread(maskPainterThread);
+            //maskThread.Start();
+        }
+        private void maskPainterThread()
+        {
+            while (true)
             {
+            if (bboxWindow == null) { createMask(); }
+            
+            bboxWindow.Left = _globalCoordinates.MaskLeft;
+            bboxWindow.Top = _globalCoordinates.MaskTop;
+            bboxWindow.Width = _globalCoordinates.MaskWidth;
+            bboxWindow.Height = _globalCoordinates.MaskHeight;
+            Thread.Sleep(125);
+            }
+        }
+        private void createMask()
+        {
                 bboxWindow = new Form();
-                bboxWindow.TransparencyKey = System.Drawing.Color.LimeGreen;
+                bboxWindow.TransparencyKey = System.Drawing.Color.Green;
                 bboxWindow.BackColor = System.Drawing.Color.LimeGreen;
-                bboxWindow.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Fixed3D;
-                bboxWindow.TopMost = true;
+                
                 Size _size = new Size(0, 0);
                 bboxWindow.MinimumSize = _size;
+                bboxWindow.TopMost = true;
+                
                 bboxWindow.Show();
-            }
-
         }
         private void imageStream_Paint(object sender, PaintEventArgs e)
         {
+            g = e.Graphics;
+            tempRectange.X = x;
+            tempRectange.Y = y;
+            tempRectange.Width = width;
+            tempRectange.Height = height;
 
-            Graphics g = e.Graphics;
-            float x = 0;
-            float y = 0;
-            float width = 10;
-            float height = 10;
-            DepthSpacePoint tempPenTip = new DepthSpacePoint();
-            Font drawFont = new Font("Consolas", 12);
-            SolidBrush drawBrush = new SolidBrush(System.Drawing.Color.Purple);
-            Rectangle tempRectange = new Rectangle((int)x, (int)y, (int)width, (int)height);
-            if (_globalCoordinates.skeletonStructure.ContainsKey(JointType.HandRight) && _globalCoordinates.skeletonStructure.ContainsKey(JointType.HandLeft))
+            lock (_tempSkeleton)
             {
-                DepthSpacePoint tempHead = _globalCoordinates.TheManager.KinectSensor.CoordinateMapper.MapCameraPointToDepthSpace(_globalCoordinates.skeletonStructure[JointType.HandRight].Position);
-                DepthSpacePoint tempSpineBase = _globalCoordinates.TheManager.KinectSensor.CoordinateMapper.MapCameraPointToDepthSpace(_globalCoordinates.skeletonStructure[JointType.HandLeft].Position);
-                g.DrawLine(System.Drawing.Pens.Yellow, tempHead.X, tempHead.Y, tempSpineBase.X, tempSpineBase.Y);
+                lock (_globalCoordinates.SkeletonStructure)
+                {
 
-            }
-
-            foreach (KeyValuePair<JointType, Joint> pair in _globalCoordinates.skeletonStructure)
+                foreach (KeyValuePair<JointType, Joint> pair in _globalCoordinates.SkeletonStructure)
+                {
+                    if (!_tempSkeleton.ContainsKey(pair.Key))
+                    {
+                        if (pair.Value.TrackingState == TrackingState.Tracked || pair.Value.TrackingState == TrackingState.Inferred)
+                        {
+                            _tempSkeleton.Add(pair.Key, pair.Value);
+                        }
+                    }
+                }
+            
+            foreach (KeyValuePair<JointType, Joint> pair in _tempSkeleton)
             {
-                tempPenTip = _globalCoordinates.TheManager.KinectSensor.CoordinateMapper.MapCameraPointToDepthSpace(pair.Value.Position);
-                x = (tempPenTip.X <= -900) ? -900 : (tempPenTip.X >= 900 ? 900 : tempPenTip.X);
-                y = (tempPenTip.Y <= -900) ? -900 : (tempPenTip.Y >= 900 ? 900 : tempPenTip.Y);
-                g.DrawEllipse(System.Drawing.Pens.Red, x, y, width, height);
+                tempPenTip = _globalCoordinates.TheManager.KinectSensor.CoordinateMapper.MapCameraPointToColorSpace(pair.Value.Position);
+                x = double.IsInfinity(tempPenTip.X) ? x : Convert.ToInt32(tempPenTip.X);
+                y = double.IsInfinity(tempPenTip.Y) ? y : Convert.ToInt32(tempPenTip.Y);
+                g.DrawEllipse(myPen, x, y, width, height);
                 g.DrawString(pair.Value.Position.Z.ToString() + "m", drawFont, drawBrush, x, y);
             }
-            if (_globalCoordinates.skeletonStructure.Count > 0)
-            {
-                float[] extremeties;
-                calculateBBox(ref _globalCoordinates.skeletonStructure, out extremeties);
-                float bboxWidth = extremeties[1] - extremeties[0];
-                float bboxHeight = extremeties[3] - extremeties[2];
-                g.DrawRectangle(System.Drawing.Pens.Blue, tempRectange);
-                g.DrawRectangle(System.Drawing.Pens.Green, extremeties[0] - (bboxWidth / 8), extremeties[2] - (bboxHeight / 8), bboxWidth * (float)1.3, bboxHeight * (float)1.2);
-                g.DrawString("ID#2936", drawFont, drawBrush, extremeties[0] - (bboxWidth / 8), extremeties[2] - (bboxHeight / 7));
-                Point tempPoint = _globalCoordinates.MainForm.PointToScreen(new Point((int)(extremeties[0] - (bboxWidth / 8)), (int)(extremeties[2] - (bboxHeight / 5))));
-
-                bboxWindow.Left = tempPoint.X;
-                bboxWindow.Top = tempPoint.Y;
-                bboxWindow.Width = (int)(bboxWidth * (float)1.3);
-                bboxWindow.Height = (int)(bboxHeight * (float)1.2);
             }
+          }
+            if (_tempSkeleton.Count > 0)
+            {
+                int[] extremeties;
+                calculateBBox(ref _tempSkeleton, out extremeties);
+                int bboxWidth = extremeties[1] - extremeties[0];
+                int bboxHeight = extremeties[3] - extremeties[2];
+                g.DrawString(_globalCoordinates.bodyID, drawFont, drawBrush, extremeties[0], extremeties[2]);
+                Point tempPoint = _globalCoordinates.MainForm.PointToScreen(new Point(Convert.ToInt32(extremeties[0] - (bboxWidth / 8)), Convert.ToInt32(extremeties[2] - (bboxHeight / 7))));
+                Pen _myPen = new System.Drawing.Pen(System.Drawing.Color.Red, 3);
+                g.DrawRectangle(_myPen, Convert.ToInt32(extremeties[0]), Convert.ToInt32(extremeties[2]), Convert.ToInt32(bboxWidth), Convert.ToInt32(bboxHeight));
 
-
-
+                _globalCoordinates.MaskLeft = Convert.ToInt32(tempPoint.X-(tempPoint.X*8));
+                _globalCoordinates.MaskTop = Convert.ToInt32(tempPoint.Y- (tempPoint.Y * 9));
+                _globalCoordinates.MaskWidth = Convert.ToInt32(bboxWidth * (float)1.3);
+                _globalCoordinates.MaskHeight = Convert.ToInt32(bboxHeight * (float)1.2);
+            }
+            _tempSkeleton.Clear();
         }
-        private void calculateBBox(ref Dictionary<JointType, Joint> _skeletonStructure, out float[] _extremeties)
+        private void calculateBBox(ref Dictionary<JointType, Joint> _skeletonStructure, out int[] _extremeties)
         {
-            DepthSpacePoint tempPenTip = new DepthSpacePoint();
-            _extremeties = new float[] { 0, 0, 0, 0 };
+            ColorSpacePoint tempPenTip = new ColorSpacePoint();
+            _extremeties = new int[4];
             //JointType xLow, xHigh, yLow, yHigh = new JointType();
-            List<float> xValue = new List<float>(), yValue = new List<float>();
+            List<float> xValue = new List<float>();
+            List<float> yValue = new List<float>();
+            
             foreach (KeyValuePair<JointType, Joint> pair in _skeletonStructure)
             {
-                tempPenTip = _globalCoordinates.TheManager.KinectSensor.CoordinateMapper.MapCameraPointToDepthSpace(pair.Value.Position);
-                xValue.Add(tempPenTip.X);
-                yValue.Add(tempPenTip.Y);
+                if(pair.Value.TrackingState == TrackingState.Tracked || pair.Value.TrackingState == TrackingState.Inferred)
+                {
+                    tempPenTip = _globalCoordinates.TheManager.KinectSensor.CoordinateMapper.MapCameraPointToColorSpace(pair.Value.Position);
+                    xValue.Add(tempPenTip.X);
+                    yValue.Add(tempPenTip.Y);
+                }
             }
-            _extremeties[0] = xValue.ToArray().Min();
-            _extremeties[1] = xValue.ToArray().Max();
-            _extremeties[2] = yValue.ToArray().Min();
-            _extremeties[3] = yValue.ToArray().Max();
+            if (xValue.Count > 0 && yValue.Count > 0)
+            {
+                double minX = xValue.ToArray().Min();
+                double maxX = xValue.ToArray().Max();
+                double minY = yValue.ToArray().Min();
+                double maxY = yValue.ToArray().Max();
+                _extremeties[0] = double.IsInfinity(minX) ? _extremeties[0] : Convert.ToInt32(minX);
+                _extremeties[1] = double.IsInfinity(maxX) ? _extremeties[1] : Convert.ToInt32(maxX);
+                _extremeties[2] = double.IsInfinity(minY) ? _extremeties[2] : Convert.ToInt32(minY);
+                _extremeties[3] = double.IsInfinity(maxY) ? _extremeties[3] : Convert.ToInt32(maxY);
+            }
 
         }
-        
     }
 }

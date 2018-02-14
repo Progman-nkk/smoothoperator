@@ -44,3 +44,14 @@ C:\code\SmoothOperator\KinectStream\bin\Debug\SmoothStream.pdb
 C:\code\SmoothOperator\KinectStream\obj\Debug\SmoothStream.Properties.Resources.resources
 C:\code\SmoothOperator\KinectStream\obj\Debug\SmoothStream.exe
 C:\code\SmoothOperator\KinectStream\obj\Debug\SmoothStream.pdb
+C:\code\CompUSA\BoundingBox\smoothoperator\KinectStream\bin\Debug\SmoothStream.exe.config
+C:\code\CompUSA\BoundingBox\smoothoperator\KinectStream\bin\Debug\SmoothStream.exe
+C:\code\CompUSA\BoundingBox\smoothoperator\KinectStream\bin\Debug\SmoothStream.pdb
+C:\code\CompUSA\BoundingBox\smoothoperator\KinectStream\bin\Debug\Microsoft.Kinect.dll
+C:\code\CompUSA\BoundingBox\smoothoperator\KinectStream\bin\Debug\Microsoft.Kinect.xml
+C:\code\CompUSA\BoundingBox\smoothoperator\KinectStream\obj\Debug\SmoothStream.SmoothOperator.resources
+C:\code\CompUSA\BoundingBox\smoothoperator\KinectStream\obj\Debug\SmoothStream.Properties.Resources.resources
+C:\code\CompUSA\BoundingBox\smoothoperator\KinectStream\obj\Debug\KinectStream.csproj.GenerateResource.Cache
+C:\code\CompUSA\BoundingBox\smoothoperator\KinectStream\obj\Debug\SmoothStream.exe
+C:\code\CompUSA\BoundingBox\smoothoperator\KinectStream\obj\Debug\SmoothStream.pdb
+C:\code\CompUSA\BoundingBox\smoothoperator\KinectStream\obj\Debug\KinectStream.csprojResolveAssemblyReference.cache

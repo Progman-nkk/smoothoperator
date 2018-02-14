@@ -5,21 +5,24 @@ using Microsoft.Kinect;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
 using System.Threading;
-
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace SmoothStream
 {
-    class CameraManager
+    public class CameraManager
     {
         private KinectSensor kinectSensor = null;
         private Thread bodyThread = null;
         private Thread depthThread = null;
+        private Thread colorThread = null;
         private DepthFrameReader depthFrameReader = null;
         private BodyFrameReader bodyFrameReader = null;
+        private ColorFrameReader colorFrameReader = null;
         private Body[] bodies = null;
         private Stopwatch bodyReaderTimer = null;
         private SharedMemorySpace _globalCoordinates = null;
-
+        private byte[] pixelData = null;
         public KinectSensor KinectSensor
         {
             get
@@ -32,7 +35,8 @@ namespace SmoothStream
                 kinectSensor = value;
             }
         }
-
+        private int width = 0;
+        private int height = 0;
         public Thread DepthThread
         {
             get
@@ -45,7 +49,6 @@ namespace SmoothStream
                 depthThread = value;
             }
         }
-
         public Thread BodyThread
         {
             get
@@ -58,7 +61,18 @@ namespace SmoothStream
                 bodyThread = value;
             }
         }
+        public Thread ColorThread
+        {
+            get
+            {
+                return colorThread;
+            }
 
+            set
+            {
+                colorThread = value;
+            }
+        }
         public CameraManager(ref SharedMemorySpace globalCoordinates)
         {
 
@@ -69,8 +83,10 @@ namespace SmoothStream
             if (bodyReaderTimer == null) { bodyReaderTimer = new Stopwatch(); bodyReaderTimer.Start(); }
             BodyThread = new Thread(bodyTrackerThread);
             BodyThread.Start();
-            DepthThread = new Thread(depthTrackerThread);
-            DepthThread.Start();
+            //DepthThread = new Thread(depthTrackerThread);
+            //DepthThread.Start();
+            ColorThread = new Thread(colorTrackerThread);
+            ColorThread.Start();
         }
         private void depthTrackerThread()
         {
@@ -82,17 +98,60 @@ namespace SmoothStream
             bodyFrameReader = KinectSensor.BodyFrameSource.OpenReader();
             if (bodyFrameReader != null) { bodyFrameReader.FrameArrived += bodyReader_FrameArrived; }
         }
+        private void colorTrackerThread()
+        {
+            colorFrameReader = KinectSensor.ColorFrameSource.OpenReader();
+            if (colorFrameReader != null) { colorFrameReader.FrameArrived += colorReader_FrameArrived; }
+        }
+        private void colorReader_FrameArrived(object sender, ColorFrameArrivedEventArgs e)
+        {
+            using (ColorFrame frame = e.FrameReference.AcquireFrame())
+            {
+                if (frame != null)
+                {
+                    width = frame.FrameDescription.Width;
+                    height = frame.FrameDescription.Height;
+                    if (pixelData == null)
+                    {
+                        pixelData = new byte[width * height * ((PixelFormats.Bgr32.BitsPerPixel + 7) / 8)];
+                    }
+
+                    Bitmap bitmap = new Bitmap(1920, 1080, System.Drawing.Imaging.PixelFormat.Format32bppRgb);
+                    frame.CopyConvertedFrameDataToArray(pixelData, ColorImageFormat.Bgra);                    
+                    var bitmapData = bitmap.LockBits(new Rectangle(0, 0, 1920, 1080), ImageLockMode.WriteOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+                    Marshal.Copy(pixelData, 0, bitmapData.Scan0, pixelData.Length);
+                    bitmap.UnlockBits(bitmapData);
+                    _globalCoordinates.PixelArray = new Bitmap(bitmap);
+                    bitmap.Dispose();
+
+                }
+            }
+        }
         private void depthReader_FrameArrived(object sender, DepthFrameArrivedEventArgs e)
         {
             using (DepthFrame frame = e.FrameReference.AcquireFrame())
             {
                 if (frame != null)
                 {
-                    _globalCoordinates.DepthPixelArray = ToImageBitmap(frame);
-                    
-                    _globalCoordinates._imageStreamReference.Image = _globalCoordinates.DepthPixelArray;
+                    _globalCoordinates.PixelArray = ToImageBitmap(frame);
+                    _globalCoordinates._imageStreamReference.Image = _globalCoordinates.PixelArray;
                 }
             }
+        }
+        private Bitmap ToImageBitmap(ref ColorFrame frame)
+        {
+            width = frame.FrameDescription.Width;
+            height = frame.FrameDescription.Height;
+            if(pixelData == null)
+            {
+                pixelData = new byte[width * height * 4];
+            }
+            frame.CopyConvertedFrameDataToArray(pixelData, ColorImageFormat.Bgra);
+            var bitmap = new Bitmap(width, height, System.Drawing.Imaging.PixelFormat.Format32bppRgb);
+            var bitmapData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.WriteOnly, bitmap.PixelFormat);
+            Marshal.Copy(pixelData, 0, bitmapData.Scan0, pixelData.Length);
+            bitmap.UnlockBits(bitmapData);
+            return bitmap;
         }
         private Bitmap ToImageBitmap(DepthFrame frame)
         {
@@ -149,17 +208,17 @@ namespace SmoothStream
                         IReadOnlyDictionary<JointType, Joint> joints = bodies[i].Joints;
                         if (joints != null)
                         {
-                            _globalCoordinates.skeletonStructure.Clear();
+                            _globalCoordinates.SkeletonStructure.Clear();
                             foreach (KeyValuePair<JointType, Joint> pair in joints)
                             {
-                                _globalCoordinates.skeletonStructure.Add(pair.Key, pair.Value);
+                                _globalCoordinates.SkeletonStructure.Add(pair.Key, pair.Value);
                             }
-
                         }
 
                         Joint midSpine = joints[JointType.Head];
 
-                        _globalCoordinates.midSpinePixel = KinectSensor.CoordinateMapper.MapCameraPointToDepthSpace(midSpine.Position);
+                        //_globalCoordinates.midSpinePixel = KinectSensor.CoordinateMapper.MapCameraPointToDepthSpace(midSpine.Position);
+                        _globalCoordinates.bodyID = bodies[i].TrackingId.ToString();
                         _globalCoordinates.HandX = midSpine.Position.X;
                         _globalCoordinates.HandY = midSpine.Position.Y;
                         _globalCoordinates.HandZ = midSpine.Position.Z;

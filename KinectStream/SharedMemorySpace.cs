@@ -11,13 +11,24 @@ namespace SmoothStream
         {
             MainForm = mainForm;
         }
-        private Painter _thePainter = null;
+        private void updateGUI()
+        {
+            if(MainForm.ImageStream.Image != null) { MainForm.ImageStream.Image.Dispose(); }; 
+            MainForm.ImageStream.Image = PixelArray;
+        }
+        public string bodyID = "none";
+        private int maskLeft = 1;
+        private int maskTop = 1;
+        private int maskWidth = 1;
+        private int maskHeight = 1;
+        private Painter _ourPainter = null;
         private CameraManager _TheManager = null;
         private SmoothOperator _mainForm = null;
         public PictureBox _imageStreamReference = null;
-        public Dictionary<JointType, Joint> skeletonStructure = new Dictionary<JointType, Joint>();
+        
+        private Dictionary<JointType, Joint> skeletonStructure = new Dictionary<JointType, Joint>();
         public DepthSpacePoint midSpinePixel = new DepthSpacePoint();
-        private Bitmap depthPixelArray;
+        private Bitmap pixelArray;
         private double totalTime = 0;
         private double currentLoop = 0;
         private double averageTimePerRun = 0;
@@ -367,16 +378,17 @@ namespace SmoothStream
             }
         }
 
-        public Bitmap DepthPixelArray
+        public Bitmap PixelArray
         {
             get
             {
-                return depthPixelArray;
+                return pixelArray;
             }
 
             set
             {
-                depthPixelArray = value;
+                pixelArray = value;
+                this.updateGUI();
             }
         }
 
@@ -406,7 +418,7 @@ namespace SmoothStream
             }
         }
 
-        internal CameraManager TheManager
+        public CameraManager TheManager
         {
             get
             {
@@ -419,16 +431,87 @@ namespace SmoothStream
             }
         }
 
-        internal Painter ThePainter
+        public Painter OurPainter
         {
             get
             {
-                return _thePainter;
+                return _ourPainter;
             }
 
             set
             {
-                _thePainter = value;
+                _ourPainter = value;
+            }
+        }
+
+        public Dictionary<JointType, Joint> SkeletonStructure
+        {
+            get
+            {
+                lock (skeletonStructure)
+                {
+                return skeletonStructure;
+                }
+            }
+
+            set
+            {
+                lock (skeletonStructure)
+                {
+                    skeletonStructure = value;
+                }
+            }
+        }
+
+        public int MaskLeft
+        {
+            get
+            {
+                return maskLeft;
+            }
+
+            set
+            {
+                maskLeft = value;
+            }
+        }
+
+        public int MaskTop
+        {
+            get
+            {
+                return maskTop;
+            }
+
+            set
+            {
+                maskTop = value;
+            }
+        }
+
+        public int MaskWidth
+        {
+            get
+            {
+                return maskWidth;
+            }
+
+            set
+            {
+                maskWidth = value;
+            }
+        }
+
+        public int MaskHeight
+        {
+            get
+            {
+                return maskHeight;
+            }
+
+            set
+            {
+                maskHeight = value;
             }
         }
     }

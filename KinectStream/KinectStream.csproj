@@ -71,7 +71,6 @@
     <Compile Include="_Smooth.Designer.cs">
       <DependentUpon>_Smooth.cs</DependentUpon>
     </Compile>
-    <Compile Include="OpenArms.cs" />
     <Compile Include="Painter.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
