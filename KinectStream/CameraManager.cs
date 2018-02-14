@@ -5,21 +5,23 @@ using Microsoft.Kinect;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
 using System.Threading;
-
+using System.Windows.Media;
 
 namespace SmoothStream
 {
-    class CameraManager
+    public class CameraManager
     {
         private KinectSensor kinectSensor = null;
         private Thread bodyThread = null;
         private Thread depthThread = null;
+        private Thread colorThread = null;
         private DepthFrameReader depthFrameReader = null;
         private BodyFrameReader bodyFrameReader = null;
+        private ColorFrameReader colorFrameReader = null;
         private Body[] bodies = null;
         private Stopwatch bodyReaderTimer = null;
         private SharedMemorySpace _globalCoordinates = null;
-
+        private byte[] pixelData = null;
         public KinectSensor KinectSensor
         {
             get
@@ -32,7 +34,8 @@ namespace SmoothStream
                 kinectSensor = value;
             }
         }
-
+        private int width = 0;
+        private int height = 0;
         public Thread DepthThread
         {
             get
@@ -45,7 +48,6 @@ namespace SmoothStream
                 depthThread = value;
             }
         }
-
         public Thread BodyThread
         {
             get
@@ -58,7 +60,18 @@ namespace SmoothStream
                 bodyThread = value;
             }
         }
+        public Thread ColorThread
+        {
+            get
+            {
+                return colorThread;
+            }
 
+            set
+            {
+                colorThread = value;
+            }
+        }
         public CameraManager(ref SharedMemorySpace globalCoordinates)
         {
 
@@ -69,8 +82,10 @@ namespace SmoothStream
             if (bodyReaderTimer == null) { bodyReaderTimer = new Stopwatch(); bodyReaderTimer.Start(); }
             BodyThread = new Thread(bodyTrackerThread);
             BodyThread.Start();
-            DepthThread = new Thread(depthTrackerThread);
-            DepthThread.Start();
+            //DepthThread = new Thread(depthTrackerThread);
+            //DepthThread.Start();
+            ColorThread = new Thread(colorTrackerThread);
+            ColorThread.Start();
         }
         private void depthTrackerThread()
         {
@@ -82,17 +97,60 @@ namespace SmoothStream
             bodyFrameReader = KinectSensor.BodyFrameSource.OpenReader();
             if (bodyFrameReader != null) { bodyFrameReader.FrameArrived += bodyReader_FrameArrived; }
         }
+        private void colorTrackerThread()
+        {
+            colorFrameReader = KinectSensor.ColorFrameSource.OpenReader();
+            if (colorFrameReader != null) { colorFrameReader.FrameArrived += colorReader_FrameArrived; }
+        }
+        private void colorReader_FrameArrived(object sender, ColorFrameArrivedEventArgs e)
+        {
+            using (ColorFrame frame = e.FrameReference.AcquireFrame())
+            {
+                if (frame != null)
+                {
+                    width = frame.FrameDescription.Width;
+                    height = frame.FrameDescription.Height;
+                    if (pixelData == null)
+                    {
+                        pixelData = new byte[width * height * ((PixelFormats.Bgr32.BitsPerPixel + 7) / 8)];
+                    }
+
+                    Bitmap bitmap = new Bitmap(1920, 1080, System.Drawing.Imaging.PixelFormat.Format32bppRgb);
+                    frame.CopyConvertedFrameDataToArray(pixelData, ColorImageFormat.Bgra);
+                    var bitmapData = bitmap.LockBits(new Rectangle(0, 0, 1920, 1080), ImageLockMode.WriteOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+                    Marshal.Copy(pixelData, 0, bitmapData.Scan0, pixelData.Length);
+                    bitmap.UnlockBits(bitmapData);
+                    _globalCoordinates.PixelArray = (Bitmap)bitmap.Clone();
+                    //bitmap.Dispose();
+
+                }
+            }
+        }
         private void depthReader_FrameArrived(object sender, DepthFrameArrivedEventArgs e)
         {
             using (DepthFrame frame = e.FrameReference.AcquireFrame())
             {
                 if (frame != null)
                 {
-                    _globalCoordinates.DepthPixelArray = ToImageBitmap(frame);
-                    
-                   // _globalCoordinates._imageStreamReference.Image = _globalCoordinates.DepthPixelArray;
+                    _globalCoordinates.PixelArray = ToImageBitmap(frame);
+                   
                 }
             }
+        }
+        private Bitmap ToImageBitmap(ref ColorFrame frame)
+        {
+            width = frame.FrameDescription.Width;
+            height = frame.FrameDescription.Height;
+            if (pixelData == null)
+            {
+                pixelData = new byte[width * height * 4];
+            }
+            frame.CopyConvertedFrameDataToArray(pixelData, ColorImageFormat.Bgra);
+            var bitmap = new Bitmap(width, height, System.Drawing.Imaging.PixelFormat.Format32bppRgb);
+            var bitmapData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.WriteOnly, bitmap.PixelFormat);
+            Marshal.Copy(pixelData, 0, bitmapData.Scan0, pixelData.Length);
+            bitmap.UnlockBits(bitmapData);
+            return bitmap;
         }
         private Bitmap ToImageBitmap(DepthFrame frame)
         {
@@ -138,43 +196,42 @@ namespace SmoothStream
             }
             if (dataReceived)
             {
-                int _bodyCount = 0;
-
                 for (int i = 0; i < bodies.Length; i++)
                 {
 
                     if (bodies[i].IsTracked)
                     {
-                        _bodyCount++;
-                        IReadOnlyDictionary<JointType, Joint> joints = bodies[i].Joints;
-                        if (joints != null)
+                        bool isInBodyBag = false;
+                        for(int t = 0; t < _globalCoordinates.BodyBag.Length; t++)
                         {
-                            _globalCoordinates.skeletonStructure.Clear();
-                            foreach (KeyValuePair<JointType, Joint> pair in joints)
+                            if (bodies[i].TrackingId == _globalCoordinates.BodyBag[t]?.TrackingId)
                             {
-                                _globalCoordinates.skeletonStructure.Add(pair.Key, pair.Value);
+                                isInBodyBag = true;
+                                _globalCoordinates.BodyBag[t] = bodies[i];
                             }
-
                         }
-
-                        Joint midSpine = joints[JointType.SpineMid];
-
-                        _globalCoordinates.midSpinePixel = KinectSensor.CoordinateMapper.MapCameraPointToDepthSpace(midSpine.Position);
-                        _globalCoordinates.HandX = midSpine.Position.X;
-                        _globalCoordinates.HandY = midSpine.Position.Y;
-                        _globalCoordinates.HandZ = midSpine.Position.Z;
-                        _globalCoordinates.HandState = bodies[i].HandRightState.ToString();
+                        if(!isInBodyBag){
+                            for (int h = 0; h < _globalCoordinates.BodyBag.Length; h++)
+                            {
+                                if (_globalCoordinates.BodyBag[h]?.IsTracked != true)
+                                {
+                                    _globalCoordinates.BodyBag[h] = bodies[i];
+                                    
+                                    break;
+                                }
+                            }
+                        }
                     }
                 }
-                _globalCoordinates.BodyCount = _bodyCount;
-                if (_bodyCount < 1)
+                for (int i = 0; i < _globalCoordinates.BodyBag.Length; i++)
                 {
-                    _globalCoordinates.HandState = "Lasso";
+                    if(_globalCoordinates.BodyBag[i]?.IsTracked == false) { _globalCoordinates.BodyBag[i] = null; }
                 }
+                
             }
             // Timer Stuff
-            _globalCoordinates.AverageCounter++;
-            _globalCoordinates.CurrentLoop = bodyReaderTimer.Elapsed.TotalMilliseconds;
+            _globalCoordinates.CounterBodyReaderLoop++;
+            _globalCoordinates.CurrentBodyReaderLoop = bodyReaderTimer.Elapsed.TotalMilliseconds;
             bodyReaderTimer.Restart();
         }
     }

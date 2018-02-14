@@ -11,159 +11,215 @@ namespace SmoothStream
         {
             MainForm = mainForm;
         }
-        private Painter _thePainter = null;
-        private CameraManager _TheManager = null;
-        private SmoothOperator _mainForm = null;
-        public PictureBox _imageStreamReference = null;
-        public Dictionary<JointType, Joint> skeletonStructure = new Dictionary<JointType, Joint>();
-        public DepthSpacePoint midSpinePixel = new DepthSpacePoint();
-        private Bitmap depthPixelArray;
-        private double totalTime = 0;
-        private double currentLoop = 0;
-        private double averageTimePerRun = 0;
-        private int averageCounter = 0;
 
+        // Global
+        private Painter _thePainter = null;
+        internal Painter ThePainter
+        {
+            get
+            {
+                return _thePainter;
+            }
+
+            set
+            {
+                _thePainter = value;
+            }
+        }
+        private CameraManager _TheManager = null;
+        internal CameraManager TheManager
+        {
+            get
+            {
+                return _TheManager;
+            }
+
+            set
+            {
+                _TheManager = value;
+            }
+        }
+        private SmoothOperator _mainForm = null;
+        public SmoothOperator MainForm
+        {
+            get
+            {
+                return _mainForm;
+            }
+
+            set
+            {
+                _mainForm = value;
+            }
+        }
+
+        // CameraManager - ColorFrames
+        private Bitmap pixelArray;
+        public Bitmap PixelArray
+        {
+            get
+            {
+                return pixelArray;
+            }
+
+            set
+            {
+                pixelArray = value;
+            }
+        }
+
+        // CameraManager - BodyFrames
         private int bodyCount = 0;
+        public int BodyCount
+        {
+            get
+            {
+                return bodyCount;
+            }
+
+            set
+            {
+                bodyCount = value;
+            }
+        }
+        private Body[] bodyBag = new Body[6];
+        public Body[] BodyBag
+        {
+            get
+            {
+                return bodyBag;
+            }
+
+            set
+            {
+                bodyBag = value;
+            }
+        }
+        private Dictionary<JointType, Joint> skeletonStructure = new Dictionary<JointType, Joint>();
+        public Dictionary<JointType, Joint> SkeletonStructure
+        {
+            get
+            {
+                lock (skeletonStructure)
+                {
+                    return skeletonStructure;
+                }
+            }
+
+            set
+            {
+                lock (skeletonStructure)
+                {
+                    skeletonStructure = value;
+                }
+            }
+        }
+        public string bodyID = "none";
+        private string handState = "None";
+        public string HandState
+        {
+            get { return handState; }
+            set { handState = value; }
+        }
+
+        private double totalTime = 0;
+        private double currentBodyReaderLoop = 0;
+        public double CurrentBodyReaderLoop
+        {
+            get
+            {
+                return currentBodyReaderLoop;
+            }
+
+            set
+            {
+                currentBodyReaderLoop = value;
+                totalTime = totalTime + value;
+                averageBodyReaderLoop = totalTime / counterBodyReaderLoop;
+            }
+        }
+        private int counterBodyReaderLoop = 0;
+        public int CounterBodyReaderLoop
+        {
+            get
+            {
+                return counterBodyReaderLoop;
+            }
+
+            set
+            {
+                counterBodyReaderLoop = value;
+            }
+        }
+        private double averageBodyReaderLoop = 0;
+        public double AverageBodyReaderLoop
+        {
+            get
+            {
+                return averageBodyReaderLoop;
+            }
+        }
+
         public double[] max = new double[6] { 0, 0, 0, 0, 0, 0 };
-        private double handX = 0;
-        private double handY = 0;
-        private double handZ = 0;
-        private double armX = 0;
-        private double armY = 0;
-        private double armZ = 0;
-        private double armA = 0;
-        private double armB = 0;
-        private double armC = 0;
+        private double jointToTrackX = 0;
+        private double jointToTrackY = 0;
+        private double jointToTrackZ = 0;
+        public double JointToTrackX
+        {
+            get { return jointToTrackX; }
+            set
+            {
+
+                jointToTrackX = value;
+            }
+        }
+        public double JointToTrackY
+        {
+            get { return jointToTrackY; }
+            set
+            {
+
+
+                jointToTrackY = value;
+            }
+        }
+        public double JointToTrackZ
+        {
+            get { return jointToTrackZ; }
+            set
+            {
+
+                jointToTrackZ = value;
+            }
+        }
+
+        //OpenArms
+        private double writerBackgroundTimer = 0;
+        public double WriterBackgroundTimer
+        {
+            get { return writerBackgroundTimer; }
+            set { writerBackgroundTimer = value; }
+        }
+        private double readerBackgroundTimer = 0;
+        public double ReaderBackgroundTimer
+        {
+            get
+            {
+                return readerBackgroundTimer;
+            }
+
+            set
+            {
+                readerBackgroundTimer = value;
+            }
+        }
+
         private double currentA1 = 0;
         private double currentA2 = 0;
         private double currentA3 = 0;
         private double currentA4 = 0;
         private double currentA5 = 0;
         private double currentA6 = 0;
-        private double currentX = 0;
-        private double currentY = 0;
-        private double currentZ = 0;
-        private double currentA = 0;
-        private double currentB = 0;
-        private double currentC = 0;
-        private string handState = "None";
-        private double writerBackgroundTimer = 0;
-        private double readerBackgroundTimer = 0;
-        private string sentMessage = "None";
-
-        public string SentMessage
-        {
-            get { return sentMessage; }
-            set { sentMessage = value; }
-        }
-        public string HandState
-        {
-            get { return handState; }
-            set { handState = value; }
-        }
-        public double HandX
-        {
-            get { return handX; }
-            set
-            {
-
-                handX = value;
-            }
-        }
-        public double HandY
-        {
-            get { return handY; }
-            set
-            {
-
-
-                handY = value;
-            }
-        }
-        public double HandZ
-        {
-            get { return handZ; }
-            set
-            {
-
-                handZ = value;
-            }
-        }
-
-
-        public double ArmX
-        {
-            get { return armX; }
-            set
-            {
-                if (armX > max[0])
-                {
-                    max[0] = armX;
-                }
-                armX = value;
-            }
-        }
-        public double ArmY
-        {
-            get { return armY; }
-            set
-            {
-                if (armY > max[1])
-                {
-                    max[1] = armY;
-                }
-                armY = value;
-            }
-        }
-        public double ArmZ
-        {
-            get { return armZ; }
-            set
-            {
-                if (armZ > max[2])
-                {
-                    max[2] = armZ;
-                }
-                armZ = value;
-            }
-        }
-        public double ArmA
-        {
-            get
-            {
-                return armA;
-            }
-
-            set
-            {
-                armA = value;
-            }
-        }
-        public double ArmB
-        {
-            get
-            {
-                return armB;
-            }
-
-            set
-            {
-                armB = value;
-            }
-        }
-        public double ArmC
-        {
-            get
-            {
-                return armC;
-            }
-
-            set
-            {
-                armC = value;
-            }
-        }
-
         public double CurrentA1
         {
             get
@@ -237,23 +293,12 @@ namespace SmoothStream
             }
         }
 
-        public double WriterBackgroundTimer
-        {
-            get { return writerBackgroundTimer; }
-            set { writerBackgroundTimer = value; }
-        }
-        public int BodyCount
-        {
-            get
-            {
-                return bodyCount;
-            }
-
-            set
-            {
-                bodyCount = value;
-            }
-        }
+        private double currentX = 0;
+        private double currentY = 0;
+        private double currentZ = 0;
+        private double currentA = 0;
+        private double currentB = 0;
+        private double currentC = 0;
         public double CurrentX
         {
             get
@@ -278,7 +323,6 @@ namespace SmoothStream
                 currentY = value;
             }
         }
-
         public double CurrentZ
         {
             get
@@ -291,7 +335,6 @@ namespace SmoothStream
                 currentZ = value;
             }
         }
-
         public double CurrentA
         {
             get
@@ -304,7 +347,6 @@ namespace SmoothStream
                 currentA = value;
             }
         }
-
         public double CurrentB
         {
             get
@@ -317,7 +359,6 @@ namespace SmoothStream
                 currentB = value;
             }
         }
-
         public double CurrentC
         {
             get
@@ -330,107 +371,88 @@ namespace SmoothStream
                 currentC = value;
             }
         }
-
-        public double AverageTimePerRun
+        
+        //Deltas
+        private double armX = 0;
+        private double armY = 0;
+        private double armZ = 0;
+        private double armA = 0;
+        private double armB = 0;
+        private double armC = 0;
+        public double ArmX
         {
-            get
+            get { return armX; }
+            set
             {
-                return averageTimePerRun;
+                if (armX > max[0])
+                {
+                    max[0] = armX;
+                }
+                armX = value;
             }
         }
-
-        public int AverageCounter
+        public double ArmY
+        {
+            get { return armY; }
+            set
+            {
+                if (armY > max[1])
+                {
+                    max[1] = armY;
+                }
+                armY = value;
+            }
+        }
+        public double ArmZ
+        {
+            get { return armZ; }
+            set
+            {
+                if (armZ > max[2])
+                {
+                    max[2] = armZ;
+                }
+                armZ = value;
+            }
+        }
+        public double ArmA
         {
             get
             {
-                return averageCounter;
+                return armA;
             }
 
             set
             {
-                averageCounter = value;
+                armA = value;
             }
         }
-
-        public double CurrentLoop
+        public double ArmB
         {
             get
             {
-                return currentLoop;
+                return armB;
             }
 
             set
             {
-                currentLoop = value;
-                totalTime = totalTime + value;
-                averageTimePerRun = totalTime / averageCounter;
+                armB = value;
             }
         }
-
-        public Bitmap DepthPixelArray
+        public double ArmC
         {
             get
             {
-                return depthPixelArray;
+                return armC;
             }
 
             set
             {
-                depthPixelArray = value;
+                armC = value;
             }
         }
 
-        public double ReaderBackgroundTimer
-        {
-            get
-            {
-                return readerBackgroundTimer;
-            }
-
-            set
-            {
-                readerBackgroundTimer = value;
-            }
-        }
-
-        public SmoothOperator MainForm
-        {
-            get
-            {
-                return _mainForm;
-            }
-
-            set
-            {
-                _mainForm = value;
-            }
-        }
-
-        internal CameraManager TheManager
-        {
-            get
-            {
-                return _TheManager;
-            }
-
-            set
-            {
-                _TheManager = value;
-            }
-        }
-
-        internal Painter ThePainter
-        {
-            get
-            {
-                return _thePainter;
-            }
-
-            set
-            {
-                _thePainter = value;
-            }
-        }
+        
     }
 }
 

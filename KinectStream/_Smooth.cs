@@ -33,7 +33,7 @@ namespace SmoothStream
         {
             if (globalCoordinates == null) { globalCoordinates = new SharedMemorySpace(mainForm); }
             if (TheManager == null) { TheManager = new CameraManager(ref globalCoordinates); }
-            //if (ThePainter == null) { ThePainter = new Painter(ref globalCoordinates); }
+            if (ThePainter == null) { ThePainter = new Painter(ref globalCoordinates); }
             if (TheArm == null) { TheArm = new OpenArms("172.31.1.147", 7000, ref globalCoordinates); }
             if(guiWorker == null) {
                 guiStopwatch = new Stopwatch();
@@ -45,21 +45,21 @@ namespace SmoothStream
         }
         private void SmoothStream_FormClosing(object sender, FormClosingEventArgs e)
         {
-            if (TheManager.DepthThread.IsAlive)
-            {
-                MessageBox.Show("depthThread is open, closing...");
-                TheManager.DepthThread.Abort();
-            }
-            if (TheManager.BodyThread.IsAlive)
-            {
-                MessageBox.Show("bodyThread is open, closing...");
-                TheManager.DepthThread.Abort();
-            }
-            if (TheManager.KinectSensor.IsOpen)
-            {
-                MessageBox.Show("Kinect is open, closing...");
-                TheManager.KinectSensor.Close();
-            }
+            //if (TheManager.DepthThread.IsAlive)
+            //{
+            //    MessageBox.Show("depthThread is open, closing...");
+            //    TheManager.DepthThread.Abort();
+            //}
+            //if (TheManager.BodyThread.IsAlive)
+            //{
+            //    MessageBox.Show("bodyThread is open, closing...");
+            //    TheManager.DepthThread.Abort();
+            //}
+            //if (TheManager.KinectSensor.IsOpen)
+            //{
+            //    MessageBox.Show("Kinect is open, closing...");
+            //    TheManager.KinectSensor.Close();
+            //}
             Application.Exit();
         }
         private void startClient_Click(object sender, EventArgs e){ TheArm.initializeClients(); }
@@ -75,13 +75,13 @@ namespace SmoothStream
         }
         private void updateGUI()
         {
-            //ImageStream.Image = globalCoordinates.DepthPixelArray;
-            txtCounter.Text = globalCoordinates.AverageCounter.ToString();
-            txtLooper.Text = globalCoordinates.CurrentLoop.ToString();
-            averageTime.Text = globalCoordinates.AverageTimePerRun.ToString();
-            txtMidSpineX.Text = globalCoordinates.HandX.ToString("#.###");
-            txtMidSpineY.Text = globalCoordinates.HandY.ToString("#.###");
-            txtMidSpineZ.Text = globalCoordinates.HandZ.ToString("#.###");
+            ImageStream.Image = globalCoordinates.PixelArray;
+            txtCounter.Text = globalCoordinates.CounterBodyReaderLoop.ToString();
+            txtLooper.Text = globalCoordinates.CurrentBodyReaderLoop.ToString();
+            averageTime.Text = globalCoordinates.AverageBodyReaderLoop.ToString();
+            txtMidSpineX.Text = globalCoordinates.JointToTrackX.ToString("#.###");
+            txtMidSpineY.Text = globalCoordinates.JointToTrackY.ToString("#.###");
+            txtMidSpineZ.Text = globalCoordinates.JointToTrackZ.ToString("#.###");
             txtArmX.Text = globalCoordinates.ArmX.ToString();
             txtArmY.Text = globalCoordinates.ArmY.ToString();
             txtArmZ.Text = globalCoordinates.ArmZ.ToString();

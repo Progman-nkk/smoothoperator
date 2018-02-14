@@ -52,18 +52,16 @@ namespace SmoothStream
             writerAssistTimer.Restart();
             BackgroundWorker worker = (BackgroundWorker)sender;
 
-            OpenArms.E6Pos tempE6 = new OpenArms.E6Pos();
+            E6Pos tempE6 = new OpenArms.E6Pos();
             tempE6.updateE6Pos(calculateDelta(), _globalCoordinates);
             ClientTunnel tempClient = getNextClient();
             tempClient.writeVariable("MYPOS", tempE6.currentValue);
             tempClient.IsActive = false;
-            _globalCoordinates.SentMessage = tempE6.currentValue;
+            _globalCoordinates.WriterBackgroundTimer = writerAssistTimer.Elapsed.TotalMilliseconds;
         }
         private void writerAssistant_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
-            while (writerAssistTimer.Elapsed.TotalMilliseconds < 3.5) ;
             BackgroundWorker worker = (BackgroundWorker)sender;
-            _globalCoordinates.WriterBackgroundTimer = writerAssistTimer.Elapsed.TotalMilliseconds;
             worker.RunWorkerAsync();
         }
         private void readerAssistant_DoWork(object sender, System.ComponentModel.DoWorkEventArgs e)
@@ -72,10 +70,10 @@ namespace SmoothStream
             BackgroundWorker worker = (BackgroundWorker)sender;
             readCurrentAxisThread();
             readCurrentPosThread();
+            _globalCoordinates.ReaderBackgroundTimer = readerAssistTimer.Elapsed.TotalMilliseconds;
         }
         private void readerAssistant_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
-            while (readerAssistTimer.Elapsed.TotalMilliseconds < 7) ;
             BackgroundWorker worker = (BackgroundWorker)sender;
             worker.RunWorkerAsync();
         }
@@ -111,13 +109,13 @@ namespace SmoothStream
                 }
                 else
                 {
-                    deltaValues[0] = (_globalCoordinates.HandZ * 0);
+                    deltaValues[0] = (_globalCoordinates.JointToTrackZ * 0);
                 }
-                deltaValues[1] = (_globalCoordinates.HandX * posAcceleration);
-                deltaValues[2] = (_globalCoordinates.HandY * posAcceleration);
-                deltaValues[3] = (_globalCoordinates.HandX * rotAcceleration);
-                deltaValues[4] = (_globalCoordinates.HandY * rotAcceleration);
-                deltaValues[5] = (_globalCoordinates.HandZ * rotAcceleration);
+                deltaValues[1] = (_globalCoordinates.JointToTrackX * posAcceleration);
+                deltaValues[2] = (_globalCoordinates.JointToTrackY * posAcceleration);
+                deltaValues[3] = (_globalCoordinates.JointToTrackX * rotAcceleration);
+                deltaValues[4] = (_globalCoordinates.JointToTrackY * rotAcceleration);
+                deltaValues[5] = (_globalCoordinates.JointToTrackZ * rotAcceleration);
             }
             else
             {
