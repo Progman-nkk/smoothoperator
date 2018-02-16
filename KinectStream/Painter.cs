@@ -37,7 +37,6 @@ namespace SmoothStream
             drawBrush = new SolidBrush(System.Drawing.Color.Purple);
             myPen = new System.Drawing.Pen(System.Drawing.Color.Red);
         }
-
         private void imageStream_Paint(object sender, PaintEventArgs e)
         {
             g = e.Graphics;
@@ -48,12 +47,12 @@ namespace SmoothStream
 
             // Collection was modified - figure out a way to lock joints
             int _bodyCount = 0;
-            for(int i = 0; i < _globalCoordinates.BodyBag.Length; i++)
+            for(int i = 0; i < _globalCoordinates.TheManager.BodyBag.Length; i++)
             {
-                 if(_globalCoordinates.BodyBag[i] != null)
+                 if(_globalCoordinates.TheManager.BodyBag[i] != null)
                 {
                     _bodyCount++;
-                IReadOnlyDictionary<JointType, Joint> joints = _globalCoordinates.BodyBag[i].Joints;
+                IReadOnlyDictionary<JointType, Joint> joints = _globalCoordinates.TheManager.BodyBag[i].Joints;
                 foreach (KeyValuePair<JointType, Joint> pair in joints)
                 {
                     tempPenTip = _globalCoordinates.TheManager.KinectSensor.CoordinateMapper.MapCameraPointToColorSpace(pair.Value.Position);
@@ -68,18 +67,16 @@ namespace SmoothStream
                     calculateBBox(ref joints, out extremeties);
                     int bboxWidth = extremeties[1] - extremeties[0];
                     int bboxHeight = extremeties[3] - extremeties[2];
-                    g.DrawString(_globalCoordinates.BodyBag[i].TrackingId.ToString(), drawFont, drawBrush, extremeties[0] / 2, extremeties[2] / 2);
+                    g.DrawString(_globalCoordinates.TheManager.BodyBag[i].TrackingId.ToString(), drawFont, drawBrush, extremeties[0] / 2, extremeties[2] / 2);
                     Point tempPoint = _globalCoordinates.MainForm.PointToScreen(new Point(Convert.ToInt32(extremeties[0] - (bboxWidth / 8)), Convert.ToInt32(extremeties[2] - (bboxHeight / 7))));
                     Pen _myPen = new System.Drawing.Pen(System.Drawing.Color.Red, 3);
                     g.DrawRectangle(_myPen, Convert.ToInt32(extremeties[0] / 2), Convert.ToInt32(extremeties[2] / 2), Convert.ToInt32(bboxWidth / 2), Convert.ToInt32(bboxHeight / 2));
                 }
                 }
             }
-            _globalCoordinates.BodyCount = _bodyCount;
+            _globalCoordinates.TheManager.BodyCount = _bodyCount;
             
         }
-
-
         private void calculateBBox(ref IReadOnlyDictionary<JointType, Joint> _skeletonStructure, out int[] _extremeties)
         {
             ColorSpacePoint tempPenTip = new ColorSpacePoint();

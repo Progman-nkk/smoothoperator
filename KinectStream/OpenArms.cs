@@ -17,6 +17,52 @@ namespace SmoothStream
         SharedMemorySpace _globalCoordinates;
         string _serverIp = "notset";
         int _serverSocket = 0;
+        private double writerBackgroundTimer = 0;
+        public double WriterBackgroundTimer
+        {
+            get { return writerBackgroundTimer; }
+            set { writerBackgroundTimer = value; }
+        }
+        private double readerBackgroundTimer = 0;
+        public double ReaderBackgroundTimer
+        {
+            get
+            {
+                return readerBackgroundTimer;
+            }
+
+            set
+            {
+                readerBackgroundTimer = value;
+            }
+        }
+
+        public E6Axis CurrentAxis
+        {
+            get
+            {
+                return currentAxis;
+            }
+
+            set
+            {
+                currentAxis = value;
+            }
+        }
+        public E6Pos CurrentPos
+        {
+            get
+            {
+                return currentPos;
+            }
+
+            set
+            {
+                currentPos = value;
+            }
+        }
+        private E6Axis currentAxis = null;
+        private E6Pos currentPos = null;
 
         public OpenArms(string serverIP, int serverSocket, ref SharedMemorySpace globalCoordinates)
         {
@@ -25,6 +71,8 @@ namespace SmoothStream
             _globalCoordinates = globalCoordinates;
             _serverIp = serverIP;
             _serverSocket = serverSocket;
+            CurrentAxis = new E6Axis();
+            CurrentPos = new E6Pos();
         }
 
         public void initializeBackgroundComs()
@@ -51,13 +99,12 @@ namespace SmoothStream
         {
             writerAssistTimer.Restart();
             BackgroundWorker worker = (BackgroundWorker)sender;
-
             E6Pos tempE6 = new OpenArms.E6Pos();
-            tempE6.updateE6Pos(calculateDelta(), _globalCoordinates);
+            tempE6.updateE6Pos(calculateDelta());
             ClientTunnel tempClient = getNextClient();
             tempClient.writeVariable("MYPOS", tempE6.currentValue);
             tempClient.IsActive = false;
-            _globalCoordinates.WriterBackgroundTimer = writerAssistTimer.Elapsed.TotalMilliseconds;
+            WriterBackgroundTimer = writerAssistTimer.Elapsed.TotalMilliseconds;
         }
         private void writerAssistant_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
@@ -68,28 +115,28 @@ namespace SmoothStream
         {
             readerAssistTimer.Restart();
             BackgroundWorker worker = (BackgroundWorker)sender;
-            readCurrentAxisThread();
-            readCurrentPosThread();
-            _globalCoordinates.ReaderBackgroundTimer = readerAssistTimer.Elapsed.TotalMilliseconds;
+            readCurrentAxis();
+            readCurrentPos();
+            ReaderBackgroundTimer = readerAssistTimer.Elapsed.TotalMilliseconds;
         }
         private void readerAssistant_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             BackgroundWorker worker = (BackgroundWorker)sender;
             worker.RunWorkerAsync();
         }
-        private void readCurrentAxisThread()
+        private void readCurrentAxis()
         {
             ClientTunnel tempClient = getNextClient();
-            E6Axis currentAxis = new E6Axis(tempClient.readVariable("$AXIS_ACT_MEAS"));
+            CurrentAxis = new E6Axis(tempClient.readVariable("$AXIS_ACT_MEAS"));
             tempClient.IsActive = false;
-            currentAxis.updateCurrentE6Axis(ref _globalCoordinates);
+            CurrentAxis.updateCurrentE6Axis();
         }
-        private void readCurrentPosThread()
+        private void readCurrentPos()
         {
             ClientTunnel tempClient = getNextClient();
-            E6Pos currentPos = new E6Pos(tempClient.readVariable("$POS_ACT"));
+            CurrentPos = new E6Pos(tempClient.readVariable("$POS_ACT"));
             tempClient.IsActive = false;
-            currentPos.updateCurrentE6Pos(ref _globalCoordinates);
+            CurrentPos.updateCurrentE6Pos(ref _globalCoordinates);
         }
         private double[] calculateDelta()
         {
@@ -103,7 +150,7 @@ namespace SmoothStream
 
             if (_globalCoordinates.HandState != "Lasso")
             {
-                if (_globalCoordinates.CurrentA3 >= 120)
+                if (CurrentAxis.a3Value >= 120)
                 {
                     deltaValues[0] = 0.5;
                 }
@@ -147,7 +194,7 @@ namespace SmoothStream
             return deltaValues;
         }
 
-        public class ReceiveMessageFormat
+        private class ReceiveMessageFormat
         {
             public ushort _messageId;
             public ushort _reqLength;
@@ -275,7 +322,7 @@ namespace SmoothStream
             }
 
         }
-        private class E6Pos
+        public class E6Pos
         {
 
             public double xValue;
@@ -340,7 +387,7 @@ namespace SmoothStream
             //    currentValue = formatE6Pos(xValue, yValue, zValue, aValue, bValue, cValue);
 
             //}
-            public void updateE6Pos(double[] deltaArray, SharedMemorySpace globalCoordinates)
+            public void updateE6Pos(double[] deltaArray)
             {
                 xValue += deltaArray[0];
                 yValue += deltaArray[1];
@@ -361,18 +408,10 @@ namespace SmoothStream
             }
             public void updateCurrentE6Pos(ref SharedMemorySpace globalCoordinates)
             {
-
-                globalCoordinates.CurrentX = xValue;
-                globalCoordinates.CurrentY = yValue;
-                globalCoordinates.CurrentZ = zValue;
-                globalCoordinates.CurrentA = aValue;
-                globalCoordinates.CurrentB = bValue;
-                globalCoordinates.CurrentC = cValue;
-
                 currentValue = formatE6Pos(xValue, yValue, zValue, aValue, bValue, cValue);
             }
         }
-        private class E6Axis
+        public class E6Axis
         {
             public double a1Value;
             public double a2Value;
@@ -380,14 +419,7 @@ namespace SmoothStream
             public double a4Value;
             public double a5Value;
             public double a6Value;
-            public double e1Value;
-            public double e2Value;
-            public double e3Value;
-            public double e4Value;
-            public double e5Value;
-            public double e6Value;
-            public int sValue;
-            public int tValue;
+
 
             public string currentValue;
 
@@ -404,13 +436,6 @@ namespace SmoothStream
                     a4Value = Convert.ToDouble(result[7]);
                     a5Value = Convert.ToDouble(result[9]);
                     a6Value = Convert.ToDouble(result[11]);
-                    //e1Value = Convert.ToDouble(result[13]);
-                    //e2Value = Convert.ToDouble(result[15]);
-                    //e3Value = Convert.ToDouble(result[17]);
-                    //e4Value = Convert.ToDouble(result[19]);
-                    //e5Value = Convert.ToDouble(result[21]);
-                    //e6Value = Convert.ToDouble(result[23]);
-
                 }
 
             }
@@ -423,18 +448,9 @@ namespace SmoothStream
                 a5Value = 0;
                 a6Value = 0;
             }
-            public void updateCurrentE6Axis(ref SharedMemorySpace globalCoordinates)
+            public void updateCurrentE6Axis()
             {
-
-                globalCoordinates.CurrentA1 = a1Value;
-                globalCoordinates.CurrentA2 = a2Value;
-                globalCoordinates.CurrentA3 = a3Value;
-                globalCoordinates.CurrentA4 = a4Value;
-                globalCoordinates.CurrentA5 = a5Value;
-                globalCoordinates.CurrentA6 = a6Value;
-                
                 currentValue = formatE6Axis(a1Value, a2Value, a3Value, a4Value, a5Value, a6Value);
-
             }
             
             private string formatE6Axis(double a1, double a2, double a3, double a4, double a5, double a6)
@@ -487,7 +503,6 @@ namespace SmoothStream
                 }
             }
         }
-
         private class ClientTunnel
         {
             private Socket clientSocket;

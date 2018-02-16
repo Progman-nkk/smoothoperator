@@ -31,8 +31,8 @@ namespace SmoothStream
 
         public void initializeGlobals(SmoothOperator mainForm)
         {
-            if (globalCoordinates == null) { globalCoordinates = new SharedMemorySpace(mainForm); }
-            if (TheManager == null) { TheManager = new CameraManager(ref globalCoordinates); }
+            if (TheManager == null) { TheManager = new CameraManager(); }
+            if (globalCoordinates == null) { globalCoordinates = new SharedMemorySpace(mainForm, TheManager); }
             if (ThePainter == null) { ThePainter = new Painter(ref globalCoordinates); }
             if (TheArm == null) { TheArm = new OpenArms("172.31.1.147", 7000, ref globalCoordinates); }
             if(guiWorker == null) {
@@ -43,6 +43,7 @@ namespace SmoothStream
                 guiWorker.RunWorkerAsync();
             }
         }
+
         private void SmoothStream_FormClosing(object sender, FormClosingEventArgs e)
         {
             //if (TheManager.DepthThread.IsAlive)
@@ -63,7 +64,6 @@ namespace SmoothStream
             Application.Exit();
         }
         private void startClient_Click(object sender, EventArgs e){ TheArm.initializeClients(); }
-
         private void guiWorker_DoWork(object sender, DoWorkEventArgs e)
         {
             Thread.Sleep(15);
@@ -75,10 +75,10 @@ namespace SmoothStream
         }
         private void updateGUI()
         {
-            ImageStream.Image = globalCoordinates.PixelArray;
-            txtCounter.Text = globalCoordinates.CounterBodyReaderLoop.ToString();
-            txtLooper.Text = globalCoordinates.CurrentBodyReaderLoop.ToString();
-            averageTime.Text = globalCoordinates.AverageBodyReaderLoop.ToString();
+            ImageStream.Image = TheManager.PixelArray;
+            txtCounter.Text = TheManager.CounterBodyReaderLoop.ToString();
+            txtLooper.Text = TheManager.CurrentBodyReaderLoop.ToString();
+            averageTime.Text = TheManager.AverageBodyReaderLoop.ToString();
             txtMidSpineX.Text = globalCoordinates.JointToTrackX.ToString("#.###");
             txtMidSpineY.Text = globalCoordinates.JointToTrackY.ToString("#.###");
             txtMidSpineZ.Text = globalCoordinates.JointToTrackZ.ToString("#.###");
@@ -88,22 +88,22 @@ namespace SmoothStream
             txtArmA.Text = globalCoordinates.ArmA.ToString();
             txtArmB.Text = globalCoordinates.ArmB.ToString();
             txtArmC.Text = globalCoordinates.ArmC.ToString();
-            txtCurrentA1.Text = globalCoordinates.CurrentA1.ToString();
-            txtCurrentA2.Text = globalCoordinates.CurrentA2.ToString();
-            txtCurrentA3.Text = globalCoordinates.CurrentA3.ToString();
-            txtCurrentA4.Text = globalCoordinates.CurrentA4.ToString();
-            txtCurrentA5.Text = globalCoordinates.CurrentA5.ToString();
-            txtCurrentA6.Text = globalCoordinates.CurrentA6.ToString();
-            txtCurrentX.Text = globalCoordinates.CurrentX.ToString();
-            txtCurrentY.Text = globalCoordinates.CurrentY.ToString();
-            txtCurrentZ.Text = globalCoordinates.CurrentZ.ToString();
-            txtCurrentA.Text = globalCoordinates.CurrentA.ToString();
-            txtCurrentB.Text = globalCoordinates.CurrentB.ToString();
-            txtCurrentC.Text = globalCoordinates.CurrentC.ToString();
+            txtCurrentA1.Text = TheArm.CurrentAxis.a1Value.ToString();
+            txtCurrentA2.Text = TheArm.CurrentAxis.a2Value.ToString();
+            txtCurrentA3.Text = TheArm.CurrentAxis.a3Value.ToString();
+            txtCurrentA4.Text = TheArm.CurrentAxis.a4Value.ToString();
+            txtCurrentA5.Text = TheArm.CurrentAxis.a5Value.ToString();
+            txtCurrentA6.Text = TheArm.CurrentAxis.a6Value.ToString();
+            txtCurrentX.Text = TheArm.CurrentPos.xValue.ToString();
+            txtCurrentY.Text = TheArm.CurrentPos.yValue.ToString();
+            txtCurrentZ.Text = TheArm.CurrentPos.xValue.ToString();
+            txtCurrentA.Text = TheArm.CurrentPos.aValue.ToString();
+            txtCurrentB.Text = TheArm.CurrentPos.bValue.ToString();
+            txtCurrentC.Text = TheArm.CurrentPos.cValue.ToString();
             rightHandState.Text = globalCoordinates.HandState.ToString();
-            txtWriterTimer.Text = globalCoordinates.WriterBackgroundTimer.ToString();
-            txtReaderTimer.Text = globalCoordinates.ReaderBackgroundTimer.ToString();
-            txtBodyCount.Text = globalCoordinates.BodyCount.ToString();
+            txtWriterTimer.Text = TheArm.WriterBackgroundTimer.ToString();
+            txtReaderTimer.Text = TheArm.ReaderBackgroundTimer.ToString();
+            txtBodyCount.Text = TheManager.BodyCount.ToString();
 
 
         }
