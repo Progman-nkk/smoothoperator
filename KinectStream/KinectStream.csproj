@@ -65,6 +65,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CameraManager.cs" />
+    <Compile Include="Server.cs" />
     <Compile Include="_Smooth.cs">
       <SubType>Form</SubType>
     </Compile>
